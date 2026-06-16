@@ -23,6 +23,7 @@ let events = loadEvents();
 // ── State ──
 let activeSport = 'all';
 let activeWC = 'all';
+let activeTime = 'from_today'; // 'from_today' or 'all'
 let searchQ = '';
 let detailId = null;
 let addDrawerOpen = false;
@@ -111,6 +112,14 @@ function groupByDate(list) {
 
 // ── Filter logic ──
 function passesFilter(e) {
+  // Time filter: 'from_today' hides past dates, 'all' shows everything
+  if (activeTime === 'from_today') {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (e.d) {
+      const evDate = new Date(e.d + 'T00:00:00');
+      if (evDate < today) return false;
+    }
+  }
   if (activeSport !== 'all' && e.cat !== activeSport) return false;
   if (searchQ) {
     const q = searchQ.toLowerCase();
@@ -131,6 +140,14 @@ function renderFilters() {
   const cats = ['all','football','tennis','swimming','mma','boxing','muaythai'];
   const catLabels = { all:'All', football:'Football', tennis:'Tennis', swimming:'Swimming', mma:'MMA', boxing:'Boxing', muaythai:'Muay Thai' };
   const catIcons = { all:'🏟️', football:'⚽', tennis:'🎾', swimming:'🏊', mma:'🥊', boxing:'🥊', muaythai:'🥋' };
+
+  // Time toggle row (renders into #time-filter-bar)
+  const timeEl = document.getElementById('time-filter-bar');
+  if (timeEl) {
+    timeEl.innerHTML =
+      `<button class="chip ${activeTime==='from_today'?'active':''}" onclick="setTime('from_today')">📅 From today</button>` +
+      `<button class="chip ${activeTime==='all'?'active':''}" onclick="setTime('all')">🗂 All time</button>`;
+  }
 
   sportFiltersEl.innerHTML = cats.map(c => `
     <button class="chip ${activeSport === c ? 'active' : ''}" onclick="setSport('${c}')">
@@ -227,8 +244,10 @@ function render() {
 // ── Set filters ──
 function setSport(c) { activeSport = c; activeWC = 'all'; render(); }
 function setWC(c) { activeWC = c; render(); }
+function setTime(v) { activeTime = v; render(); }
 window.setSport = setSport;
 window.setWC = setWC;
+window.setTime = setTime;
 
 // ── Search ──
 searchInput.addEventListener('input', e => {
